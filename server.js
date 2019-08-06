@@ -10,12 +10,16 @@ const jwt = require("jsonwebtoken");
 var JSZip = require("jszip");
 var Docxtemplater = require("docxtemplater");
 var fs = require("fs");
+var HtmlDocx = require("html-docx-js");
 const qa = require("./qa");
 const sg = require("./script");
+const integ = require("./integ");
 
-mongoose.connect(
-  "mongodb+srv://JavaFX:swing-123@cluster0-reg43.mongodb.net/cjem?retryWrites=true&w=majority"
-);
+mongoose
+  .connect(
+    "mongodb+srv://JavaFX:swing-123@cluster0-reg43.mongodb.net/cjem?retryWrites=true&w=majority"
+  )
+  .catch(err => console.log(err));
 
 const app = express();
 
@@ -78,6 +82,14 @@ app.get("/sg/list", (req, res) => {
   });
 });
 
+app.post("/sg/del", (req, res) => {
+  fs.unlinkSync(`./results/sg/${req.body.name}`);
+  res.status(200);
+});
+app.post("/sg/download", (req, res) => {
+  res.download(`./results/sg/${req.body.name}`);
+});
+
 //Qualite et Audit
 app.post("/qa/fichePoste", (req, res) => {
   let tmp = {
@@ -129,6 +141,69 @@ app.post("/qa/ficheTresorier", (req, res) => {
   console.table(tmp);
   let n = qa.qa_fiche_processus_tresorier(tmp);
   res.download(`./results/qa/${n}`);
+});
+
+app.get("/qa/list", (req, res) => {
+  let files = [];
+  fs.readdir("./results/qa", function(err, list) {
+    if (err) throw err;
+    for (var i = 0; i < list.length; i++) {
+      //console.log(list[i]); //print the file
+
+      let tmp = {
+        id: i,
+        name: list[i]
+      };
+      files.push(tmp); //store the file name into the array files
+    }
+    res.send(files);
+  });
+});
+
+app.post("/qa/del", (req, res) => {
+  fs.unlinkSync(`./results/qa/${req.body.name}`);
+  res.status(200);
+});
+app.post("/qa/download", (req, res) => {
+  res.download(`./results/qa/${req.body.name}`);
+});
+
+//integration
+
+app.post("/if/lettre_approbation", (req, res) => {
+  let tmp = {
+    date: req.body.date,
+    destinataire: req.body.destinataire,
+    nom_junior: req.body.nom_junior,
+    articles: req.body.articles,
+    nom_president: req.body.nom_president,
+    nom_responsable: req.body.nom_responsable
+  };
+  let n = integ.lettre_approbation(tmp);
+  res.download(`./results/integ/${n}`);
+});
+
+app.get("/if/list", (req, res) => {
+  let files = [];
+  fs.readdir("./results/integ", function(err, list) {
+    if (err) throw err;
+    for (var i = 0; i < list.length; i++) {
+      let tmp = {
+        id: i,
+        name: list[i]
+      };
+      files.push(tmp); //store the file name into the array files
+    }
+    res.send(files);
+  });
+});
+
+app.post("/if/del", (req, res) => {
+  fs.unlinkSync(`./results/integ/${req.body.name}`);
+  res.status(200);
+});
+app.post("/if/download", (req, res) => {
+  res.download(`./results/integ/${req.body.name}`);
 });
 
 //authentication
@@ -185,6 +260,43 @@ app.post("/login", (req, res) => {
       token: token
     });
   });
+});
+
+app.post("/editUser", (req, res) => {
+  if (req.body.password != null) {
+    User.findOneAndUpdate(
+      { email: req.body.email },
+      {
+        $set: {
+          name: req.body.name,
+          email: req.body.email,
+          password: bcrypt.hashSync(req.body.password, 10)
+        }
+      },
+      (err, user) => {
+        if (err) console.log(err);
+        res.status(200).json({
+          message: "updated"
+        });
+      }
+    );
+  } else {
+    User.findOneAndUpdate(
+      { email: req.body.email },
+      {
+        $set: {
+          name: req.body.name,
+          email: req.body.email
+        }
+      },
+      (err, user) => {
+        if (err) console.log(err);
+        res.status(200).json({
+          message: "updated"
+        });
+      }
+    );
+  }
 });
 
 const PORT = process.env.PORT || 5000;

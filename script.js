@@ -118,7 +118,6 @@ function readSG() {
   fs.readdir("./results/sg", function(err, list) {
     if (err) throw err;
     for (var i = 0; i < list.length; i++) {
-      //console.log(list[i]); //print the file
       files.push(list[i]); //store the file name into the array files
     }
     return files;
@@ -128,8 +127,3 @@ function readSG() {
 module.exports.sg_accuse_update = sg_accuse_update;
 module.exports.sg_lettre_update = sg_lettre_update;
 module.exports.readSG = readSG;
-
-// let t = getSG();
-// console.log(t);
-
-// console.log(readSG());
