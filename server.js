@@ -264,38 +264,55 @@ app.post("/login", (req, res) => {
 
 app.post("/editUser", (req, res) => {
   if (req.body.password != null) {
-    User.findOneAndUpdate(
-      { email: req.body.email },
-      {
-        $set: {
-          name: req.body.name,
-          email: req.body.email,
-          password: bcrypt.hashSync(req.body.password, 10)
-        }
-      },
-      (err, user) => {
-        if (err) console.log(err);
-        res.status(200).json({
-          message: "updated"
+    User.findOne({ email: req.body.email }, (err, user) => {
+      if (err) console.log(err);
+      if (bcrypt.compareSync(req.body.currentPassword, user.password)) {
+        User.findOneAndUpdate(
+          { email: req.body.email },
+          {
+            $set: {
+              name: req.body.name,
+              email: req.body.email,
+              password: bcrypt.hashSync(req.body.password, 10)
+            }
+          },
+          (err, user) => {
+            if (err) console.log(err);
+            res.status(200).json({
+              message: "updated"
+            });
+          }
+        );
+      } else {
+        console.log("wrong pass");
+        res.status(401).json({
+          err: "error"
         });
       }
-    );
+    });
   } else {
-    User.findOneAndUpdate(
-      { email: req.body.email },
-      {
-        $set: {
-          name: req.body.name,
-          email: req.body.email
+    if (bcrypt.compareSync(req.body.currentPassword, user.password)) {
+      User.findOneAndUpdate(
+        { email: req.body.email },
+        {
+          $set: {
+            name: req.body.name,
+            email: req.body.email
+          }
+        },
+        (err, user) => {
+          if (err) console.log(err);
+          res.status(200).json({
+            message: "updated"
+          });
         }
-      },
-      (err, user) => {
-        if (err) console.log(err);
-        res.status(200).json({
-          message: "updated"
-        });
-      }
-    );
+      );
+    } else {
+      console.log("wrong pass");
+      res.status(401).json({
+        err: "error"
+      });
+    }
   }
 });
 
